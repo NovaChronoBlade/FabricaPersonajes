@@ -1,0 +1,14 @@
+{
+  "paths": {
+    "images": {
+      "root": "./public/images",
+      "characters": "./public/images/characters",
+      "avatars": "./public/images/avatars",
+      "ui": "./public/images/ui"
+    },
+    "baseUrl": {
+      "development": "http://localhost:5000",
+      "production": "https://your-domain.com"
+    }
+  }
+}

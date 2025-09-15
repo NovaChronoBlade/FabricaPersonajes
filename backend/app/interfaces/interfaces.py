@@ -3,12 +3,21 @@ from abc import ABC, abstractmethod
 
 # Interfaces de productos
 class ICuerpo(ABC):
+
+    @abstractmethod
+    def obtener_informacion(self) -> dict:
+        pass
+
     @abstractmethod
     def analizar(self) -> None:
         pass
 
 
 class IMontura(ABC):
+    @abstractmethod
+    def obtener_informacion(self) -> dict:
+        pass
+
     @abstractmethod
     def montar(self) -> None:
         pass
@@ -20,6 +29,10 @@ class IMontura(ABC):
 
 class IArmadura(ABC):
     @abstractmethod
+    def obtener_informacion(self) -> dict:
+        pass
+
+    @abstractmethod
     def equipar(self) -> None:
         pass
 
@@ -29,6 +42,10 @@ class IArmadura(ABC):
 
 
 class IArma(ABC):
+    @abstractmethod
+    def obtener_informacion(self) -> dict:
+        pass
+
     @abstractmethod
     def atacar(self) -> None:
         pass
