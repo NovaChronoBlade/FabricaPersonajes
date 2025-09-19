@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 *.md
 !README.md
+!API_DOCUMENTATION.md
+!API_REFERENCE.md
