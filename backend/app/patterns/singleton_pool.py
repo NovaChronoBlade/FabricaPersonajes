@@ -16,7 +16,7 @@ class Pool:
     def get_factory(self, factory_class):
         if self._factory is not None:
             if self._factory_type != factory_class:
-                raise FactoryYaExiste(f"Ya exuiste la fabrica {self._factory_type.__name__} elimina la anterior para rear una nueva")
+                raise FactoryYaExiste(f"Ya existe la fabrica {self._factory_type.__name__} elimina la anterior para rear una nueva")
             return self._factory
         
         self._factory = factory_class()
