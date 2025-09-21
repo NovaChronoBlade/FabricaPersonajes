@@ -1,15 +1,14 @@
-# Documentación de API - Fábrica de Personajes
-## Patrón Singleton + Object Pool
+# Documentación Completa de API - Fábrica de Personajes
+## 🏗️ Sistema con Patrón Singleton + Object Pool
 
-### 📋 Índice
+### 📚 Índice
 1. [Información General](#información-general)
 2. [Rutas de Fábricas](#rutas-de-fábricas)
-3. [Rutas de Gestión de Pools](#rutas-de-gestión-de-pools)
-4. [Rutas de Estadísticas](#rutas-de-estadísticas)
-5. [Rutas de Demostración](#rutas-de-demostración)
-6. [Rutas de Imágenes](#rutas-de-imágenes)
-7. [Códigos de Error](#códigos-de-error)
-8. [Ejemplos de Uso](#ejemplos-de-uso)
+3. [Rutas de Pool Singleton](#rutas-de-pool-singleton)
+4. [Rutas de Imágenes](#rutas-de-imágenes)
+5. [Códigos de Error](#códigos-de-error)
+6. [Arquitectura Técnica](#arquitectura-técnica)
+7. [Ejemplos Avanzados](#ejemplos-avanzados)
 
 ---
 
@@ -21,30 +20,51 @@
 
 **Fábricas Disponibles:** `elfos`, `humanos`, `enanos`, `orcos`
 
+**Patrones Implementados:**
+- **Singleton Pattern**: Una única instancia de fábrica por tipo
+- **Object Pool Pattern**: Reutilización de objetos para optimizar memoria
+- **Factory Pattern**: Creación centralizada de objetos por especie
+
 ---
 
 ## 🏭 Rutas de Fábricas
 
 ### `GET /factories`
-**Descripción:** Lista todas las fábricas disponibles.
+**Descripción:** Lista todas las fábricas de personajes disponibles en el sistema.
 
-**Respuesta:**
+**Respuesta (200):**
 ```json
 ["elfos", "enanos", "humanos", "orcos"]
+```
+
+**Ejemplo:**
+```bash
+curl -X GET "http://127.0.0.1:5000/api/factories"
 ```
 
 ---
 
 ### `GET|POST /create/<kind>`
-**Descripción:** Crea un personaje completo usando el patrón Singleton + Object Pool.
+**Descripción:** Crea un personaje completo usando el patrón Singleton + Object Pool. La fábrica se mantiene como singleton y los objetos se reutilizan.
+
+**Parámetros de Path:**
+- `kind`: Tipo de personaje (`elfos`, `humanos`, `enanos`, `orcos`)
 
 **Parámetros de Query:**
 - `auto_return` (bool, default: true) - Si devolver automáticamente los objetos al pool
 - `timeout` (int, default: 10) - Timeout en segundos para obtener objetos del pool
+- `delete` (bool) - Si es "true", elimina la fábrica del pool en lugar de crear personaje
 
-**Ejemplo:**
+**Ejemplos:**
 ```bash
+# Crear personaje elfo
 GET /api/create/elfos?auto_return=true&timeout=5
+
+# Eliminar fábrica del pool
+GET /api/create/elfos?delete=true
+
+# Crear sin auto-return (para testing)
+GET /api/create/elfos?auto_return=false
 ```
 
 **Respuesta Exitosa (200):**
@@ -60,304 +80,185 @@ GET /api/create/elfos?auto_return=true&timeout=5
       "peso": "70kg",
       "habilidades": ["Visión nocturna", "Agilidad", "Magia"]
     },
-    "montura": { ... },
-    "armadura": { ... },
-    "arma": { ... }
-  },
-  "pool_stats_before": {
-    "cuerpo_pool_size": 0,
-    "created_cuerpos": 1,
-    ...
-  },
-  "pool_stats_after": {
-    "cuerpo_pool_size": 1,
-    "created_cuerpos": 1,
-    ...
-  },
-  "auto_return": true,
-  "timeout_used": 10
+    "montura": {
+      "imagen": "/images/characters/elfo_montura.png",
+      "tipo": "Caballo élfico",
+      "velocidad": "Muy rápida",
+      "habilidades": ["Vuelo corto", "Salto alto"]
+    },
+    "armadura": {
+      "imagen": "/images/characters/elfo_armadura.png",
+      "tipo": "Armadura élfica",
+      "material": "Mithril",
+      "defensa": "Alta",
+      "peso": "Ligera"
+    },
+    "arma": {
+      "imagen": "/images/characters/elfo_arma.png",
+      "tipo": "Arco élfico",
+      "material": "Madera sagrada",
+      "daño": "Alto",
+      "alcance": "Largo"
+    }
+  }
 }
 ```
 
-**Error Pool Exhausted (429):**
+**Respuesta con delete=true (200):**
 ```json
 {
-  "error": "Pool exhausted",
-  "message": "Pool exhausted: No hay objetos disponibles después de 10s. Creados: 10/10, Pool size: 0",
-  "kind": "elfos",
-  "pool_stats": { ... },
-  "suggestion": "Usar /pools/elfos/clear o esperar a que se devuelvan objetos"
+  "message": "Fabrica 'elfos' eliminada del pool exitosamente",
+  "deleted_factory": "elfos",
+  "previous_factory": {
+    "has_factory": true,
+    "factory_type": "FabricarElfos",
+    "factory_instance": "<app.factories.elfos.FabricarElfos object at 0x...>"
+  }
+}
+```
+
+**Error - Fábrica Desconocida (404):**
+```json
+{
+  "error": "Fabrica desconocida"
+}
+```
+
+**Error - No se puede eliminar (400):**
+```json
+{
+  "error": "No se puede eliminar la fábrica",
+  "message": "La fábrica actual en el pool es 'FabricarHumanos', no se puede eliminar 'elfos'",
+  "current_factory": { ... },
+  "requested_deletion": "elfos",
+  "success": false
 }
 ```
 
 ---
 
 ### `GET /character/<kind>/info`
-**Descripción:** Obtiene información detallada de un personaje, devolviendo automáticamente los objetos al pool.
+**Descripción:** Obtiene información detallada de un personaje. Crea temporalmente los objetos y los devuelve automáticamente al pool.
 
-**Respuesta:**
+**Respuesta (200):**
 ```json
 {
   "kind": "elfos",
   "cuerpo": { ... },
   "montura": { ... },
   "armadura": { ... },
-  "arma": { ... },
-  "pool_stats": { ... }
+  "arma": { ... }
 }
 ```
 
 ---
 
-## 🏊 Rutas de Gestión de Pools
+## 🔄 Rutas de Pool Singleton
 
-### `GET /pools/limits`
-**Descripción:** Obtiene los límites configurados de todos los pools.
+### `GET /pool/status`
+**Descripción:** Obtiene el estado actual del pool singleton global. Muestra qué fábrica está actualmente cargada.
 
-**Respuesta:**
+**Respuesta (200):**
 ```json
 {
-  "message": "Límites de pools configurados",
-  "limits": {
-    "elfos": {
-      "max_size": 10,
-      "current_stats": { ... }
-    },
-    "humanos": { ... },
-    ...
-  }
+  "has_factory": true,
+  "factory_type": "FabricarElfos",
+  "factory_instance": "<app.factories.elfos.FabricarElfos object at 0x1a2b3c4d>"
 }
 ```
 
----
-
-### `GET /pools/<kind>/config`
-**Descripción:** Obtiene la configuración actual de un pool específico.
-
-**Respuesta:**
+**Respuesta - Pool vacío (200):**
 ```json
 {
-  "kind": "elfos",
-  "max_size": 10,
-  "stats": { ... },
-  "instance_id": 2000906647312
+  "has_factory": false,
+  "factory_type": null,
+  "factory_instance": null
 }
 ```
-
----
-
-### `POST /pools/<kind>/config`
-**Descripción:** Actualiza la configuración de un pool (temporal, hasta restart del servidor).
-
-**Body:**
-```json
-{
-  "max_size": 15
-}
-```
-
-**Respuesta:**
-```json
-{
-  "message": "Configuración de pool elfos actualizada",
-  "old_max_size": 10,
-  "new_max_size": 15,
-  "current_stats": { ... },
-  "warning": "Cambio temporal - se reiniciará al restart del servidor"
-}
-```
-
----
-
-### `POST /pools/<kind>/clear`
-**Descripción:** Limpia todos los objetos disponibles en el pool (sin resetear contadores).
-
-**Respuesta:**
-```json
-{
-  "message": "Pool elfos limpiado",
-  "cleared_objects": {
-    "cuerpos": 3,
-    "monturas": 2,
-    "armaduras": 1,
-    "armas": 4
-  },
-  "stats_before": { ... },
-  "stats_after": { ... }
-}
-```
-
----
-
-### `POST /pools/<kind>/reset`
-**Descripción:** Reinicia completamente el pool y contadores (solo para testing).
-
-**Respuesta:**
-```json
-{
-  "message": "Pool elfos completamente reiniciado",
-  "warning": "Esta operación reinicia contadores - solo para testing",
-  "stats_before": { ... },
-  "stats_after": { ... }
-}
-```
-
----
-
-### `POST /pools/<kind>/stress`
-**Descripción:** Ejecuta una prueba de estrés en el pool.
-
-**Parámetros de Query:**
-- `count` (int, default: 5) - Número de objetos a crear
-- `timeout` (int, default: 2) - Timeout por objeto
 
 **Ejemplo:**
 ```bash
-POST /api/pools/elfos/stress?count=8&timeout=1
-```
-
-**Respuesta:**
-```json
-{
-  "message": "Prueba de estrés completada para elfos",
-  "parameters": {"count": 8, "timeout": 1},
-  "initial_stats": { ... },
-  "results": [
-    {
-      "iteration": 1,
-      "status": "success",
-      "time_ms": 0.5,
-      "stats": { ... }
-    },
-    {
-      "iteration": 6,
-      "status": "failed",
-      "error": "Pool exhausted: ...",
-      "stats": { ... }
-    }
-  ],
-  "final_stats": { ... },
-  "objects_returned": 5
-}
+curl -X GET "http://127.0.0.1:5000/api/pool/status"
 ```
 
 ---
 
-## 📊 Rutas de Estadísticas
+### `DELETE|POST /pool/delete/<kind>`
+**Descripción:** Elimina una fábrica específica del pool singleton. **Solo permite eliminar si es exactamente la misma fábrica que está actualmente en uso.**
 
-### `GET /pools/stats`
-**Descripción:** Obtiene estadísticas de todos los pools.
+**Parámetros de Path:**
+- `kind`: Tipo de fábrica a eliminar (`elfos`, `humanos`, `enanos`, `orcos`)
 
-**Respuesta:**
+**Comportamiento:**
+- ✅ **Permite eliminación**: Si la fábrica actual coincide con `kind`
+- ❌ **Rechaza eliminación**: Si hay una fábrica diferente en el pool
+- ✅ **Permite eliminación**: Si el pool está vacío (no hay fábrica)
+
+**Respuesta Exitosa (200):**
 ```json
 {
-  "message": "Estadísticas de pools de objetos (patrón Singleton + Pool)",
-  "factories": {
-    "elfos": {
-      "cuerpo_pool_size": 2,
-      "montura_pool_size": 1,
-      "armadura_pool_size": 0,
-      "arma_pool_size": 3,
-      "created_cuerpos": 5,
-      "created_monturas": 3,
-      "created_armaduras": 2,
-      "created_armas": 7
-    },
-    ...
-  }
-}
-```
-
----
-
-### `GET /pools/<kind>/stats`
-**Descripción:** Obtiene estadísticas detalladas de un pool específico.
-
-**Respuesta:**
-```json
-{
-  "factory": "elfos",
-  "stats": {
-    "cuerpo_pool_size": 2,
-    "montura_pool_size": 1,
-    "armadura_pool_size": 0,
-    "arma_pool_size": 3,
-    "created_cuerpos": 5,
-    "created_monturas": 3,
-    "created_armaduras": 2,
-    "created_armas": 7
+  "message": "Fabrica 'elfos' eliminada del pool exitosamente",
+  "deleted_factory": "elfos",
+  "previous_factory": {
+    "has_factory": true,
+    "factory_type": "FabricarElfos",
+    "factory_instance": "<...>"
   },
-  "explanation": {
-    "singleton": "Esta fábrica usa patrón Singleton - siempre retorna la misma instancia",
-    "object_pool": "Mantiene pools separados para reutilizar objetos de cada tipo",
-    "pool_sizes": "Número de objetos disponibles en cada pool",
-    "created_objects": "Número total de objetos creados desde el inicio"
-  }
+  "success": true
 }
 ```
 
----
-
-## 🎭 Rutas de Demostración
-
-### `GET /demo/singleton`
-**Descripción:** Demuestra que las fábricas implementan correctamente el patrón Singleton.
-
-**Respuesta:**
+**Error - Fábrica Diferente (400):**
 ```json
 {
-  "message": "Demostración del patrón Singleton",
-  "explanation": "Todas las 'instancias' de cada fábrica tienen el mismo ID, confirmando que es Singleton",
-  "results": {
-    "elfos": {
-      "instance_id": 2000906647312,
-      "is_singleton": true,
-      "pool_stats": { ... }
-    },
-    ...
-  }
+  "error": "No se puede eliminar la fábrica",
+  "message": "La fábrica actual en el pool es 'FabricarHumanos', no se puede eliminar 'elfos'",
+  "current_factory": {
+    "has_factory": true,
+    "factory_type": "FabricarHumanos",
+    "factory_instance": "<...>"
+  },
+  "requested_deletion": "elfos",
+  "success": false
 }
+```
+
+**Ejemplos:**
+```bash
+# Eliminar fábrica de elfos (solo si está activa)
+curl -X DELETE "http://127.0.0.1:5000/api/pool/delete/elfos"
+
+# Método POST alternativo
+curl -X POST "http://127.0.0.1:5000/api/pool/delete/elfos"
 ```
 
 ---
 
-### `GET /demo/pool-exhaustion`
-**Descripción:** Demuestra paso a paso qué ocurre cuando se agota un pool.
+### `DELETE|POST /pool/force-clear`
+**Descripción:** Fuerza la eliminación de cualquier fábrica del pool sin validación de tipo. ⚠️ **Usar con precaución** - elimina cualquier fábrica sin importar el tipo.
 
-**Parámetros de Query:**
-- `kind` (string, default: "elfos") - Tipo de fábrica para la demo
+**Comportamiento:**
+- Elimina cualquier fábrica que esté en el pool
+- No valida el tipo de fábrica
+- Útil para limpieza de testing o reseteo del sistema
+
+**Respuesta (200):**
+```json
+{
+  "message": "Pool limpiado forzadamente",
+  "previous_factory": {
+    "has_factory": true,
+    "factory_type": "FabricarElfos",
+    "factory_instance": "<...>"
+  },
+  "success": true,
+  "warning": "Se eliminó cualquier fábrica sin validación de tipo"
+}
+```
 
 **Ejemplo:**
 ```bash
-GET /api/demo/pool-exhaustion?kind=humanos
-```
-
-**Respuesta:**
-```json
-{
-  "message": "Demostración de agotamiento de pool completada",
-  "kind": "elfos",
-  "demo_results": [
-    {
-      "step": 1,
-      "description": "Creando objetos hasta el límite",
-      "stats": { ... }
-    },
-    {
-      "step": "2.1",
-      "description": "Correcto: Pool exhausted como esperado",
-      "error": "Pool exhausted: No hay objetos disponibles...",
-      "expected": true
-    },
-    {
-      "step": "3.1",
-      "description": "Éxito: Objeto reutilizado del pool",
-      "stats": { ... }
-    }
-  ],
-  "final_stats": { ... },
-  "restored_max_size": 10
-}
+curl -X DELETE "http://127.0.0.1:5000/api/pool/force-clear"
 ```
 
 ---
@@ -365,149 +266,200 @@ GET /api/demo/pool-exhaustion?kind=humanos
 ## 🖼️ Rutas de Imágenes
 
 ### `GET /images/<category>`
-**Descripción:** Lista todas las imágenes de una categoría.
+**Descripción:** Lista todas las imágenes disponibles en una categoría específica.
 
-**Categorías:** `characters`, `avatars`, `ui`
+**Parámetros de Path:**
+- `category`: Categoría de imagen (`characters`, `avatars`, `ui`)
 
-**Respuesta:**
+**Respuesta (200):**
 ```json
 {
   "category": "characters",
   "images": [
     "/images/characters/elfo/elfo_cuerpo.png",
+    "/images/characters/enano/enano_cuerpo.png",
     "/images/characters/humano/humano_cuerpo.png",
     ...
   ]
 }
 ```
 
----
-
-### `GET /images/<category>/<filename>`
-**Descripción:** Sirve una imagen específica.
-
-**Ejemplo:**
-```bash
-GET /api/images/characters/elfo/elfo_cuerpo.png
-```
-
----
-
-### `POST /upload/<category>`
-**Descripción:** Sube una nueva imagen.
-
-**Body:** `multipart/form-data` con campo `image`
-
-**Respuesta:**
+**Error - Categoría inválida (400):**
 ```json
 {
-  "message": "Image uploaded successfully",
-  "path": "/images/characters/nuevo_personaje.png"
+  "error": "Invalid category"
 }
 ```
 
 ---
 
-## ⚠️ Códigos de Error
+### `GET /images/<category>/<filename>`
+**Descripción:** Sirve una imagen específica directamente.
 
-| Código | Descripción | Causa Común |
-|--------|-------------|-------------|
-| **200** | OK | Operación exitosa |
-| **400** | Bad Request | Parámetros inválidos o categoría no válida |
-| **404** | Not Found | Fábrica desconocida o imagen no encontrada |
-| **429** | Too Many Requests | Pool exhausted - límite alcanzado |
-| **500** | Internal Server Error | Error interno del servidor |
+**Parámetros de Path:**
+- `category`: Categoría de imagen
+- `filename`: Nombre del archivo de imagen
 
----
+**Respuesta (200):** Archivo de imagen (binary content)
 
-## 📝 Ejemplos de Uso
-
-### Ejemplo 1: Crear personaje y monitorear pool
-```python
-import requests
-
-# 1. Ver estado inicial
-response = requests.get('http://127.0.0.1:5000/api/pools/elfos/stats')
-print(f"Estado inicial: {response.json()['stats']}")
-
-# 2. Crear personaje
-response = requests.get('http://127.0.0.1:5000/api/create/elfos?auto_return=false')
-personaje = response.json()
-print(f"Personaje creado: {personaje['character']['cuerpo']['especie']}")
-
-# 3. Ver estado después
-response = requests.get('http://127.0.0.1:5000/api/pools/elfos/stats')
-print(f"Estado después: {response.json()['stats']}")
+**Error - Imagen no encontrada (404):**
+```json
+{
+  "error": "Image not found"
+}
 ```
 
-### Ejemplo 2: Prueba de límites
-```python
-import requests
-
-# 1. Configurar límite pequeño para prueba
-requests.post('http://127.0.0.1:5000/api/pools/elfos/config', 
-              json={"max_size": 2})
-
-# 2. Crear objetos hasta límite
-for i in range(3):
-    try:
-        response = requests.get('http://127.0.0.1:5000/api/create/elfos?auto_return=false&timeout=1')
-        if response.status_code == 429:
-            print(f"Pool exhausted en iteración {i+1}")
-            break
-        else:
-            print(f"Objeto {i+1} creado")
-    except Exception as e:
-        print(f"Error: {e}")
-
-# 3. Limpiar y restaurar
-requests.post('http://127.0.0.1:5000/api/pools/elfos/reset')
-requests.post('http://127.0.0.1:5000/api/pools/elfos/config', 
-              json={"max_size": 10})
-```
-
-### Ejemplo 3: Demostración completa
-```python
-import requests
-
-# Demo singleton
-response = requests.get('http://127.0.0.1:5000/api/demo/singleton')
-singleton_demo = response.json()
-print(f"Singleton demo: {singleton_demo['message']}")
-
-# Demo pool exhaustion  
-response = requests.get('http://127.0.0.1:5000/api/demo/pool-exhaustion?kind=elfos')
-exhaustion_demo = response.json()
-print(f"Exhaustion demo: {exhaustion_demo['message']}")
-
-# Prueba de estrés
-response = requests.post('http://127.0.0.1:5000/api/pools/elfos/stress?count=5&timeout=2')
-stress_test = response.json()
-print(f"Stress test: {stress_test['message']}")
+**Ejemplo:**
+```bash
+curl -X GET "http://127.0.0.1:5000/api/images/characters/elfo/elfo_cuerpo.png"
 ```
 
 ---
 
-## 🔧 Notas Técnicas
+### `POST /upload/<category>`
+**Descripción:** Sube una nueva imagen a una categoría específica.
 
-### Parámetros del Object Pool
-- **max_size**: Número máximo de objetos que se pueden crear por tipo
-- **timeout**: Tiempo máximo a esperar por un objeto del pool
-- **auto_return**: Si devolver automáticamente objetos al pool después de uso
+**Parámetros de Path:**
+- `category`: Categoría destino (`characters`, `avatars`, `ui`)
 
-### Comportamiento del Pool
-1. **Dentro del límite**: Crea nuevos objetos normalmente
-2. **Límite alcanzado + pool disponible**: Reutiliza objetos del pool
-3. **Límite alcanzado + pool vacío**: Espera con timeout o error 429
+**Request Body:**
+```
+Content-Type: multipart/form-data
+Campo: "image" (archivo)
+```
 
-### Thread Safety
-- Todos los pools son thread-safe
-- Singleton implementa double-checked locking
-- Safe para entornos de producción concurrentes
+**Extensiones permitidas:** `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`
+
+**Respuesta Exitosa (200):**
+```json
+{
+  "message": "Image uploaded successfully",
+  "path": "/images/characters/mi_nueva_imagen.png"
+}
+```
+
+**Errores:**
+- **400**: No se proporcionó archivo, nombre vacío, extensión inválida
+- **500**: Error interno al guardar
+
+**Ejemplo:**
+```bash
+curl -X POST "http://127.0.0.1:5000/api/upload/characters" \
+     -F "image=@mi_imagen.png"
+```
 
 ---
 
-**Versión:** 1.0  
-**Fecha:** Septiembre 2025  
-**Patrón:** Singleton + Object Pool  
-**Framework:** Flask + Python 3.11+
+## 🚨 Códigos de Error Completos
+
+| Código | Descripción | Casos Típicos |
+|--------|-------------|---------------|
+| **200** | ✅ OK | Operación exitosa, datos válidos |
+| **400** | ❌ Bad Request | Fábrica incorrecta para eliminar, categoría inválida, archivo inválido |
+| **404** | ❌ Not Found | Fábrica desconocida, imagen no encontrada |
+| **500** | 💥 Internal Error | Error del servidor, problema al crear objetos |
+
+---
+
+## 🏗️ Arquitectura Técnica
+
+### Patrón Singleton
+- **Una instancia por tipo**: Solo existe una instancia de `FabricarElfos`, `FabricarHumanos`, etc.
+- **Pool global**: Un singleton global `Pool` gestiona qué fábrica está activa
+- **Thread-safe**: Implementación segura para concurrencia
+
+### Validación de Eliminación
+```python
+# Solo permite eliminar si el tipo coincide
+if self._factory_type == factory_class:
+    self._factory = None
+    self._factory_type = None
+    return True
+else:
+    return False  # Fábrica diferente - no se puede eliminar
+```
+
+### Factory Pattern
+- **Interfaces comunes**: `ICuerpo`, `IMontura`, `IArmadura`, `IArma`
+- **Implementación específica**: Cada raza implementa sus propias versiones
+- **Creación centralizada**: Métodos `crear_*` en cada fábrica
+
+---
+
+## 📖 Ejemplos Avanzados
+
+### Flujo Completo: Cambio de Fábrica
+```python
+import requests
+
+BASE = "http://127.0.0.1:5000/api"
+
+# 1. Verificar estado actual
+status = requests.get(f"{BASE}/pool/status")
+print(f"Estado inicial: {status.json()}")
+
+# 2. Crear personaje elfo (carga FabricarElfos)
+elfo = requests.get(f"{BASE}/create/elfos")
+print(f"Elfo creado: {elfo.json()['status']}")
+
+# 3. Verificar que la fábrica cambió
+status = requests.get(f"{BASE}/pool/status")
+print(f"Fábrica actual: {status.json()['factory_type']}")
+
+# 4. Intentar eliminar fábrica incorrecta (fallará)
+delete_humanos = requests.delete(f"{BASE}/pool/delete/humanos")
+print(f"Eliminar humanos: {delete_humanos.status_code} - {delete_humanos.json()['error']}")
+
+# 5. Eliminar fábrica correcta (exitoso)
+delete_elfos = requests.delete(f"{BASE}/pool/delete/elfos")
+print(f"Eliminar elfos: {delete_elfos.json()['success']}")
+
+# 6. Crear humano (carga FabricarHumanos)
+humano = requests.get(f"{BASE}/create/humanos")
+print(f"Humano creado: {humano.json()['status']}")
+```
+
+### Testing de Validación
+```python
+# Caso 1: Pool vacío - cualquier eliminación falla
+requests.delete(f"{BASE}/pool/force-clear")
+result = requests.delete(f"{BASE}/pool/delete/elfos")
+# result.json()['success'] == False (no hay fábrica que eliminar)
+
+# Caso 2: Fábrica correcta - eliminación exitosa  
+requests.get(f"{BASE}/create/elfos")
+result = requests.delete(f"{BASE}/pool/delete/elfos")
+# result.json()['success'] == True
+
+# Caso 3: Fábrica incorrecta - eliminación rechazada
+requests.get(f"{BASE}/create/elfos")
+result = requests.delete(f"{BASE}/pool/delete/humanos")
+# result.status_code == 400, result.json()['success'] == False
+```
+
+### Mantenimiento del Sistema
+```python
+# Limpiar completamente para testing
+requests.delete(f"{BASE}/pool/force-clear")
+
+# Verificar limpieza
+status = requests.get(f"{BASE}/pool/status")
+assert not status.json()['has_factory']
+
+# Cargar fábrica específica
+requests.get(f"{BASE}/create/elfos")
+
+# Verificar carga
+status = requests.get(f"{BASE}/pool/status")
+assert status.json()['factory_type'] == 'FabricarElfos'
+```
+
+---
+
+**💡 Notas Importantes:**
+
+1. **Singleton por Tipo**: Cada tipo de fábrica mantiene su propia instancia singleton
+2. **Pool Global**: Solo una fábrica puede estar activa a la vez en el pool global
+3. **Validación Estricta**: No se puede eliminar una fábrica de diferente tipo
+4. **Force Clear**: Úsalo solo para testing o reseteo completo del sistema
+5. **Thread Safety**: El sistema está diseñado para ser thread-safe
