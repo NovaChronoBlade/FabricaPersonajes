@@ -20,7 +20,7 @@ class CuerpoHumano(ICuerpo):
 class MonturaHumano(IMontura):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "humano_montura.png"),
+            "imagen": image_manager.get_web_path("characters", "humano/humano_montura.png"),
             "tipo": "Caballo de guerra",
             "velocidad": "Rápida",
             "habilidades": ["Velocidad", "Salto", "Resistencia"]
@@ -36,7 +36,7 @@ class MonturaHumano(IMontura):
 class ArmaduraHumano(IArmadura):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "humano_armadura.png"),
+            "imagen": image_manager.get_web_path("characters", "humano/humano_armadura.png"),
             "tipo": "Armadura de cota de malla",
             "material": "Acero templado",
             "defensa": "Media-Alta",
@@ -53,7 +53,7 @@ class ArmaduraHumano(IArmadura):
 class ArmaHumano(IArma):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "humano_arma.png"),
+            "imagen": image_manager.get_web_path("characters", "humano/humano_arma.png"),
             "tipo": "Espada larga",
             "material": "Acero forjado",
             "daño": "Alto",

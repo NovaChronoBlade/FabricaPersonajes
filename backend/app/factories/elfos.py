@@ -21,7 +21,7 @@ class CuerpoElfo(ICuerpo):
 class MonturaElfo(IMontura):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "elfo_montura.png"),
+            "imagen": image_manager.get_web_path("characters", "elfo/elfo_montura.png"),
             "tipo": "Caballo élfico",
             "velocidad": "Muy rápida",
             "habilidades": ["Vuelo corto", "Salto alto"]
@@ -37,7 +37,7 @@ class MonturaElfo(IMontura):
 class ArmaduraElfo(IArmadura):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "elfo_armadura.png"),
+            "imagen": image_manager.get_web_path("characters", "elfo/elfo_armadura.png"),
             "tipo": "Armadura élfica",
             "material": "Mithril",
             "defensa": "Alta",
@@ -54,7 +54,7 @@ class ArmaduraElfo(IArmadura):
 class ArmaElfo(IArma):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "elfo_arma.png"),
+            "imagen": image_manager.get_web_path("characters", "elfo/elfo_arma.png"),
             "tipo": "Arco élfico",
             "material": "Madera sagrada",
             "daño": "Alto",

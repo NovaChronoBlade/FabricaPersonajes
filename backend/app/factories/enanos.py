@@ -20,7 +20,7 @@ class CuerpoEnano(ICuerpo):
 class MonturaEnano(IMontura):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "enano_montura.png"),
+            "imagen": image_manager.get_web_path("characters", "enano/enano_montura.png"),
             "tipo": "Jabalí de guerra",
             "velocidad": "Media",
             "habilidades": ["Carga", "Resistencia", "Terreno difícil"]
@@ -36,7 +36,7 @@ class MonturaEnano(IMontura):
 class ArmaduraEnano(IArmadura):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "enano_armadura.png"),
+            "imagen": image_manager.get_web_path("characters", "enano/enano_armadura.png"),
             "tipo": "Armadura de placas",
             "material": "Acero forjado",
             "defensa": "Muy alta",
@@ -53,7 +53,7 @@ class ArmaduraEnano(IArmadura):
 class ArmaEnano(IArma):
     def obtener_informacion(self) -> dict:
         return {
-            "imagen": image_manager.get_web_path("characters", "enano_arma.png"),
+            "imagen": image_manager.get_web_path("characters", "enano/enano_arma.png"),
             "tipo": "Martillo de guerra",
             "material": "Hierro macizo",
             "daño": "Muy alto",
